@@ -1,19 +1,12 @@
 package com.touchpanel.android.integration.mango
 
-sealed class MangoCallState {
-    data object NotConfigured : MangoCallState()
-    data object AppNotInstalled : MangoCallState()
-    data object AppAvailable : MangoCallState()
-    data class IncomingCall(
-        val callerName: String,
-        val phoneNumber: String,
-        val timestamp: Long = System.currentTimeMillis()
-    ) : MangoCallState()
-    data class ActiveCall(
-        val callerName: String,
-        val phoneNumber: String,
-        val durationSeconds: Long
-    ) : MangoCallState()
-    data object CallEnded : MangoCallState()
-    data class IntegrationError(val message: String) : MangoCallState()
+/**
+ * Honest status of the Mango Talker integration.
+ * In accordance with Android OS security model, third-party apps can only
+ * communicate with Mango Talker via verified public Intents (ACTION_DIAL, ACTION_MAIN, tel: URI).
+ */
+sealed class MangoIntegrationStatus {
+    data object Installed : MangoIntegrationStatus()
+    data object NotInstalled : MangoIntegrationStatus()
+    data class Error(val message: String) : MangoIntegrationStatus()
 }

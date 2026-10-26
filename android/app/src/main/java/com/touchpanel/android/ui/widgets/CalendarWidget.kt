@@ -17,10 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.touchpanel.android.core.theme.AccentPurple
-import com.touchpanel.android.core.theme.TextMuted
-import com.touchpanel.android.core.theme.TextPrimary
-import com.touchpanel.android.core.theme.TextSecondary
+import com.touchpanel.android.core.theme.*
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -31,20 +28,22 @@ fun CalendarWidget(
     var calendarMonth by remember { mutableStateOf(Calendar.getInstance()) }
     val today = remember { Calendar.getInstance() }
 
-    val monthFormat = remember { SimpleDateFormat("MMMM yyyy", Locale.getDefault()) }
+    val monthFormat = remember { SimpleDateFormat("LLLL yyyy", Locale("ru")) }
 
-    Column(modifier = modifier.fillMaxSize()) {
+    Column(modifier = modifier.fillMaxSize(), verticalArrangement = Arrangement.SpaceBetween) {
         // Month header with prev/next navigation
         Row(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 4.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = monthFormat.format(calendarMonth.time),
+                text = monthFormat.format(calendarMonth.time).replaceFirstChar { it.uppercase() },
                 color = TextPrimary,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.SemiBold
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold
             )
 
             Row {
@@ -54,13 +53,13 @@ fun CalendarWidget(
                         newCal.add(Calendar.MONTH, -1)
                         calendarMonth = newCal
                     },
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(22.dp)
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Previous month",
+                        contentDescription = "Предыдущий месяц",
                         tint = TextSecondary,
-                        modifier = Modifier.size(14.dp)
+                        modifier = Modifier.size(13.dp)
                     )
                 }
 
@@ -70,34 +69,34 @@ fun CalendarWidget(
                         newCal.add(Calendar.MONTH, 1)
                         calendarMonth = newCal
                     },
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(22.dp)
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                        contentDescription = "Next month",
+                        contentDescription = "Следующий месяц",
                         tint = TextSecondary,
-                        modifier = Modifier.size(14.dp)
+                        modifier = Modifier.size(13.dp)
                     )
                 }
             }
         }
 
-        // Days of week header
+        // Days of week header (Russian)
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            val weekDays = listOf("Mo", "Tu", "We", "Th", "Fr", "Sa", "Su")
-            weekDays.forEach { day ->
+            val weekDays = listOf("Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс")
+            weekDays.forEachIndexed { idx, day ->
                 Text(
                     text = day,
-                    color = TextMuted,
-                    fontSize = 10.sp,
+                    color = if (idx >= 5) AccentPurple.copy(alpha = 0.8f) else TextMuted,
+                    fontSize = 9.sp,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.width(22.dp),
+                    modifier = Modifier.width(20.dp),
                     textAlign = TextAlign.Center
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(2.dp))
 
         // Grid of dates
         val cal = calendarMonth.clone() as Calendar
@@ -119,7 +118,7 @@ fun CalendarWidget(
 
                             Box(
                                 modifier = Modifier
-                                    .size(22.dp)
+                                    .size(20.dp)
                                     .clip(CircleShape)
                                     .background(if (isToday) AccentPurple else androidx.compose.ui.graphics.Color.Transparent),
                                 contentAlignment = Alignment.Center
@@ -127,13 +126,13 @@ fun CalendarWidget(
                                 Text(
                                     text = dayCounter.toString(),
                                     color = if (isToday) TextPrimary else TextSecondary,
-                                    fontSize = 10.sp,
+                                    fontSize = 9.sp,
                                     fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
                                     textAlign = TextAlign.Center
                                 )
                             }
                         } else {
-                            Spacer(modifier = Modifier.size(22.dp))
+                            Spacer(modifier = Modifier.size(20.dp))
                         }
                         dayCounter++
                     }

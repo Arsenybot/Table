@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Card and Surface Radii -->
+    <dimen name="card_corner_radius">16dp</dimen>
+    <dimen name="button_corner_radius">10dp</dimen>
+    <dimen name="badge_corner_radius">6dp</dimen>
+    <dimen name="slider_track_radius">18dp</dimen>
+
+    <!-- Elevations for OLED Depth -->
+    <dimen name="card_elevation_default">2dp</dimen>
+    <dimen name="card_elevation_elevated">4dp</dimen>
+    <dimen name="card_elevation_floating">8dp</dimen>
+
+    <!-- Standard Padding & Spacing -->
+    <dimen name="dashboard_padding_horizontal">12dp</dimen>
+    <dimen name="dashboard_padding_vertical">8dp</dimen>
+    <dimen name="card_padding">12dp</dimen>
+    <dimen name="widget_grid_gap">10dp</dimen>
+</resources>

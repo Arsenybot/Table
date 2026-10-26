@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Touch Panel</string>
+    <string name="dashboard_title">Сенсорная панель управления</string>
+    <string name="edit_layout">Раскладка</string>
+    <string name="done_layout">Готово</string>
+    <string name="save_layout">Сохранить</string>
+    <string name="reset_layout">Сброс</string>
+    <string name="add_widget">Добавить</string>
+    <string name="delete_widget">Удалить</string>
+    <string name="move_left">Сдвинуть влево</string>
+    <string name="move_right">Сдвинуть вправо</string>
+    <string name="windows_disconnected">Windows офлайн</string>
+    <string name="windows_connected">Windows подключен</string>
+    <string name="time_date_title">Время и дата</string>
+    <string name="calendar_title">Календарь</string>
+    <string name="volume_title">Громкость</string>
+    <string name="brightness_title">Яркость</string>
+    <string name="media_title">Медиаплеер</string>
+    <string name="quick_actions_title">Системные действия</string>
+    <string name="mango_talker_title">Mango Talker (VoIP)</string>
+    <string name="connection_title">Соединение</string>
+    <string name="battery_title">Батарея и док-станция</string>
+    <string name="custom_action_title">Пользовательское действие</string>
+    <string name="mango_installed">com.mangotele.mtalker готов</string>
+    <string name="mango_not_installed">Mango Talker не установлен</string>
+    <string name="mango_launch">Открыть Mango Talker</string>
+    <string name="mango_install">Установить Mango Talker</string>
+    <string name="mango_dial">Вызов</string>
+    <string name="mango_phone_hint">+7 (___) ___-__-__</string>
+    <string name="mango_disclaimer">Интеграция через системные Intents. Прямой перехват приватных VoIP-вызовов ограничен архитектурой безопасности Android OS.</string>
+</resources>

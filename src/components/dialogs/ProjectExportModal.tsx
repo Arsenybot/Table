@@ -130,22 +130,116 @@ import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.core.view.WindowCompat
+import com.touchpanel.android.core.hardware.*
 import com.touchpanel.android.core.theme.TouchPanelTheme
 import com.touchpanel.android.ui.dashboard.DashboardScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Keep screen on while docked on desk
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
         setContent {
             TouchPanelTheme {
-                DashboardScreen()
+                DashboardScreen(viewModel = viewModel)
             }
         }
+    }
+}`,
+  },
+  {
+    path: 'android/app/src/main/java/com/touchpanel/android/core/hardware/BatteryMonitor.kt',
+    category: 'Hardware',
+    language: 'kotlin',
+    content: `package com.touchpanel.android.core.hardware
+
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.os.BatteryManager
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+
+data class BatteryInfo(
+    val percentage: Int = 100,
+    val isCharging: Boolean = false,
+    val powerSource: PowerSource = PowerSource.BATTERY
+)
+
+enum class PowerSource { BATTERY, AC, USB, WIRELESS }
+
+class BatteryMonitor(private val context: Context) {
+    private val _batteryState = MutableStateFlow(BatteryInfo())
+    val batteryState: StateFlow<BatteryInfo> = _batteryState
+}`,
+  },
+  {
+    path: 'android/app/src/main/java/com/touchpanel/android/core/hardware/AndroidVolumeManager.kt',
+    category: 'Hardware',
+    language: 'kotlin',
+    content: `package com.touchpanel.android.core.hardware
+
+import android.content.Context
+import android.media.AudioManager
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+
+class AndroidVolumeManager(private val context: Context) {
+    private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+    fun setVolumePercent(percent: Int) {
+        val max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+        val target = ((percent / 100f) * max).toInt()
+        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, target, 0)
+    }
+}`,
+  },
+  {
+    path: 'android/app/src/main/java/com/touchpanel/android/core/hardware/AndroidBrightnessManager.kt',
+    category: 'Hardware',
+    language: 'kotlin',
+    content: `package com.touchpanel.android.core.hardware
+
+import android.app.Activity
+import android.content.Context
+
+class AndroidBrightnessManager(private val context: Context, private val activityProvider: () -> Activity?) {
+    fun setBrightnessPercent(percent: Int) {
+        activityProvider()?.let { act ->
+            val lp = act.window.attributes
+            lp.screenBrightness = percent / 100f
+            act.window.attributes = lp
+        }
+    }
+}`,
+  },
+  {
+    path: 'android/app/src/main/java/com/touchpanel/android/integration/mango/MangoTalkerAdapter.kt',
+    category: 'Integration',
+    language: 'kotlin',
+    content: `package com.touchpanel.android.integration.mango
+
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+
+class MangoTalkerAdapter(private val context: Context) {
+    companion object {
+        const val MANGO_PACKAGE = "com.mangotele.mtalker"
+    }
+    fun launchApp(): Boolean {
+        val intent = context.packageManager.getLaunchIntentForPackage(MANGO_PACKAGE)
+        return intent?.let { context.startActivity(it); true } ?: false
+    }
+    fun dialNumber(phone: String): Boolean {
+        val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:$phone")).apply {
+            setPackage(MANGO_PACKAGE)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        return try { context.startActivity(intent); true } catch (e: Exception) { false }
     }
 }`,
   },

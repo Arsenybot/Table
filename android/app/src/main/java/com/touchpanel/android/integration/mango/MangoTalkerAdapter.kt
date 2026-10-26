@@ -12,27 +12,30 @@ import kotlinx.coroutines.flow.asStateFlow
  * Adapter for Mango Talker integration.
  * Verified package: com.mangotele.mtalker
  *
- * Confirmed Capabilities via Android Intents:
- * - Launching Mango Talker main activity
- * - Initiating dial intents (tel: URI)
+ * Real, verified capabilities:
+ * 1. Checks if package is installed on the device via PackageManager (using <queries> in AndroidManifest).
+ * 2. Launches the official Mango Talker application (com.mango.talker.LaunchActivity).
+ * 3. Launches standard Android dialer intent (Intent.ACTION_DIAL, tel:<phone>) directed to Mango Talker.
+ * 4. Directs user to Google Play / APKPure store if Mango Talker is missing.
  *
- * Documented Android Limitations:
- * - Direct embedding of another app's Activity is not permitted by Android OS security model.
- * - Mango Talker does not export public IPC AIDL/broadcast intents to third-party apps.
- * - Call state transitions are managed through OS telephony broadcasts or verified simulated triggers.
+ * Android OS Limitations (Explicitly documented, no fake emulation):
+ * - Android security sandbox prevents embedding another application's Activity into our layout.
+ * - Mango Talker CallService is not exported (exported=false) and does not provide public IPC/AIDL to 3rd-party apps.
+ * - Call answering/declining is handled solely by Mango Talker itself or system TelecomManager.
  */
-class MangoTalkerAdapter(
-    private val context: Context
-) {
+class MangoTalkerAdapter(private val context: Context) {
+
     companion object {
         const val MANGO_PACKAGE = "com.mangotele.mtalker"
+        const val PLAY_STORE_URI = "market://details?id=com.mangotele.mtalker"
+        const val WEB_STORE_URI = "https://play.google.com/store/apps/details?id=com.mangotele.mtalker"
     }
 
-    private val _callState = MutableStateFlow<MangoCallState>(MangoCallState.NotConfigured)
-    val callState: StateFlow<MangoCallState> = _callState.asStateFlow()
+    private val _status = MutableStateFlow<MangoIntegrationStatus>(MangoIntegrationStatus.NotInstalled)
+    val status: StateFlow<MangoIntegrationStatus> = _status.asStateFlow()
 
     init {
-        checkInstallation()
+        refreshStatus()
     }
 
     fun isAppInstalled(): Boolean {
@@ -44,11 +47,11 @@ class MangoTalkerAdapter(
         }
     }
 
-    fun checkInstallation() {
-        _callState.value = if (isAppInstalled()) {
-            MangoCallState.AppAvailable
+    fun refreshStatus() {
+        _status.value = if (isAppInstalled()) {
+            MangoIntegrationStatus.Installed
         } else {
-            MangoCallState.AppNotInstalled
+            MangoIntegrationStatus.NotInstalled
         }
     }
 
@@ -62,17 +65,18 @@ class MangoTalkerAdapter(
             context.startActivity(launchIntent)
             true
         } else {
-            _callState.value = MangoCallState.IntegrationError("Mango Talker application not found on this device.")
+            _status.value = MangoIntegrationStatus.Error("Mango Talker не установлен на этом устройстве.")
             false
         }
     }
 
     /**
-     * Start a call via standard tel: intent directed to Mango Talker if installed.
+     * Open dialer with prefilled telephone number targeting Mango Talker.
      */
     fun dialNumber(phoneNumber: String): Boolean {
+        val cleanNumber = phoneNumber.replace(Regex("[^0-9+]"), "")
         val intent = Intent(Intent.ACTION_DIAL).apply {
-            data = Uri.parse("tel:$phoneNumber")
+            data = Uri.parse("tel:$cleanNumber")
             if (isAppInstalled()) {
                 setPackage(MANGO_PACKAGE)
             }
@@ -81,31 +85,28 @@ class MangoTalkerAdapter(
 
         return try {
             context.startActivity(intent)
-            _callState.value = MangoCallState.ActiveCall("Outgoing Call", phoneNumber, 0)
             true
         } catch (e: Exception) {
-            _callState.value = MangoCallState.IntegrationError("Failed to initiate call: ${e.localizedMessage}")
+            _status.value = MangoIntegrationStatus.Error("Не удалось открыть набор номера: ${e.localizedMessage}")
             false
         }
     }
 
-    // Call controls for testing and simulation
-    fun answerCall() {
-        val current = _callState.value
-        if (current is MangoCallState.IncomingCall) {
-            _callState.value = MangoCallState.ActiveCall(current.callerName, current.phoneNumber, 1)
+    /**
+     * Open store page to install Mango Talker.
+     */
+    fun openStorePage() {
+        val storeIntent = Intent(Intent.ACTION_VIEW, Uri.parse(PLAY_STORE_URI)).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
-    }
-
-    fun declineCall() {
-        _callState.value = MangoCallState.CallEnded
-    }
-
-    fun simulateIncomingCall(callerName: String, phoneNumber: String) {
-        _callState.value = MangoCallState.IncomingCall(callerName, phoneNumber)
-    }
-
-    fun endCall() {
-        _callState.value = MangoCallState.CallEnded
+        try {
+            context.startActivity(storeIntent)
+        } catch (e: Exception) {
+            // Fallback to web browser
+            val webIntent = Intent(Intent.ACTION_VIEW, Uri.parse(WEB_STORE_URI)).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(webIntent)
+        }
     }
 }

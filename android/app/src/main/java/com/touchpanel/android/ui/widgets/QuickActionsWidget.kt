@@ -8,7 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -25,6 +25,7 @@ data class QuickActionItem(
     val id: String,
     val label: String,
     val icon: ImageVector,
+    val isDangerous: Boolean = false,
     val onClick: () -> Unit
 )
 
@@ -34,50 +35,68 @@ fun QuickActionsWidget(
     onLaunchApp: (appId: String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var lastClickTime by remember { mutableLongStateOf(0L) }
+
+    fun safeClick(action: () -> Unit) {
+        val now = System.currentTimeMillis()
+        if (now - lastClickTime > 400) { // 400ms debounce
+            lastClickTime = now
+            action()
+        }
+    }
+
     val items = listOf(
-        QuickActionItem("lock", "Lock", Icons.Default.Lock) {
-            onExecuteShortcut("lock_screen", "Win+L")
+        QuickActionItem("lock", "Блок. Win+L", Icons.Default.Lock, isDangerous = true) {
+            safeClick { onExecuteShortcut("lock_screen", "Win+L") }
         },
-        QuickActionItem("taskmgr", "TaskMgr", Icons.Default.Memory) {
-            onExecuteShortcut("task_manager", "Ctrl+Shift+Esc")
+        QuickActionItem("taskmgr", "Диспетчер", Icons.Default.Memory) {
+            safeClick { onExecuteShortcut("task_manager", "Ctrl+Shift+Esc") }
         },
-        QuickActionItem("snip", "Snip", Icons.Default.Crop) {
-            onExecuteShortcut("screen_snip", "Win+Shift+S")
+        QuickActionItem("snip", "Скриншот", Icons.Default.Crop) {
+            safeClick { onExecuteShortcut("screen_snip", "Win+Shift+S") }
         },
-        QuickActionItem("calc", "Calc", Icons.Default.Calculate) {
-            onLaunchApp("calc")
+        QuickActionItem("calc", "Калькулятор", Icons.Default.Calculate) {
+            safeClick { onLaunchApp("calc") }
         },
-        QuickActionItem("terminal", "Terminal", Icons.Default.Terminal) {
-            onLaunchApp("wt")
+        QuickActionItem("terminal", "Терминал", Icons.Default.Terminal) {
+            safeClick { onLaunchApp("wt") }
         },
-        QuickActionItem("browser", "Browser", Icons.Default.Language) {
-            onLaunchApp("browser")
+        QuickActionItem("browser", "Браузер", Icons.Default.Language) {
+            safeClick { onLaunchApp("browser") }
         }
     )
 
     Column(
         modifier = modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().weight(1f),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             items.take(3).forEach { item ->
                 QuickActionTile(
                     item = item,
-                    modifier = Modifier.weight(1f).fillMaxHeight()
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
                 )
             }
         }
         Row(
-            modifier = Modifier.fillMaxWidth().weight(1f),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             items.drop(3).take(3).forEach { item ->
                 QuickActionTile(
                     item = item,
-                    modifier = Modifier.weight(1f).fillMaxHeight()
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
                 )
             }
         }
@@ -94,7 +113,7 @@ private fun QuickActionTile(
             .clip(RoundedCornerShape(10.dp))
             .background(SurfaceCardElevated)
             .clickable { item.onClick() }
-            .padding(6.dp),
+            .padding(4.dp),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -105,14 +124,15 @@ private fun QuickActionTile(
                 imageVector = item.icon,
                 contentDescription = item.label,
                 tint = TextPrimary,
-                modifier = Modifier.size(18.dp)
+                modifier = Modifier.size(17.dp)
             )
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(3.dp))
             Text(
                 text = item.label,
                 color = TextSecondary,
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Medium
+                fontSize = 9.sp,
+                fontWeight = FontWeight.Medium,
+                maxLines = 1
             )
         }
     }

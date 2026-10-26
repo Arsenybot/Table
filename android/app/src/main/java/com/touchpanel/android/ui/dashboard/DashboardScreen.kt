@@ -1,5 +1,8 @@
 package com.touchpanel.android.ui.dashboard
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -36,7 +39,7 @@ fun DashboardScreen(
         modifier = modifier
             .fillMaxSize()
             .background(DarkGraphiteBackground)
-            .padding(12.dp)
+            .padding(horizontal = 12.dp, vertical = 8.dp)
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             // Header Bar
@@ -44,12 +47,13 @@ fun DashboardScreen(
                 isEditMode = state.isEditMode,
                 connectionState = state.connectionState,
                 statusMessage = state.statusMessage,
+                isErrorMessage = state.isErrorMessage,
                 onToggleEdit = { viewModel.toggleEditMode() },
                 onAddWidget = { viewModel.openCatalog() },
                 onResetLayout = { viewModel.resetLayout() }
             )
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             // Adaptive Landscape Dashboard Grid
             val scrollState = rememberScrollState()
@@ -60,29 +64,37 @@ fun DashboardScreen(
                     .horizontalScroll(scrollState),
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                // Left Column: Clock (top), Calendar (middle), Connection (bottom)
+                // Column 1: Time, Calendar & Hardware Status (Width 220dp)
                 Column(
-                    modifier = Modifier.width(220.dp).fillMaxHeight(),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                    modifier = Modifier
+                        .width(220.dp)
+                        .fillMaxHeight(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     WidgetCard(
-                        title = "TIME & DATE",
-                        modifier = Modifier.weight(1.3f).fillMaxWidth(),
+                        title = "ВРЕМЯ И ДАТА",
+                        modifier = Modifier
+                            .weight(1.3f)
+                            .fillMaxWidth(),
                         isEditMode = state.isEditMode
                     ) {
                         ClockWidget()
                     }
 
                     WidgetCard(
-                        title = "CALENDAR",
-                        modifier = Modifier.weight(1.8f).fillMaxWidth(),
+                        title = "КАЛЕНДАРЬ",
+                        modifier = Modifier
+                            .weight(1.8f)
+                            .fillMaxWidth(),
                         isEditMode = state.isEditMode
                     ) {
                         CalendarWidget()
                     }
 
                     WidgetCard(
-                        modifier = Modifier.height(52.dp).fillMaxWidth(),
+                        modifier = Modifier
+                            .height(48.dp)
+                            .fillMaxWidth(),
                         isEditMode = state.isEditMode
                     ) {
                         ConnectionWidget(
@@ -93,29 +105,39 @@ fun DashboardScreen(
                     }
                 }
 
-                // Center Column: Mango Talker Call Card (top), Media Controls (middle), Battery (bottom)
+                // Column 2: Mango Talker Integration & Media Controls (Width 320dp)
                 Column(
-                    modifier = Modifier.width(320.dp).fillMaxHeight(),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                    modifier = Modifier
+                        .width(320.dp)
+                        .fillMaxHeight(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     WidgetCard(
-                        title = "MANGO TALKER",
-                        modifier = Modifier.weight(1.7f).fillMaxWidth(),
+                        title = "MANGO TALKER (VOIP)",
+                        modifier = Modifier
+                            .weight(1.7f)
+                            .fillMaxWidth(),
                         isEditMode = state.isEditMode
                     ) {
                         MangoTalkerWidget(
-                            state = state.mangoState,
-                            adapter = viewModel.mangoAdapter
+                            status = state.mangoStatus,
+                            quickDialNumber = state.quickDialNumber,
+                            onNumberChange = { viewModel.setQuickDialNumber(it) },
+                            onDialNumber = { viewModel.dialMangoNumber(it) },
+                            onLaunchApp = { viewModel.launchMangoTalkerApp() },
+                            onInstallApp = { viewModel.installMangoTalker() }
                         )
                     }
 
                     WidgetCard(
-                        title = "NOW PLAYING",
-                        modifier = Modifier.weight(1.4f).fillMaxWidth(),
+                        title = "МЕДИАПЛЕЕР",
+                        modifier = Modifier
+                            .weight(1.4f)
+                            .fillMaxWidth(),
                         isEditMode = state.isEditMode
                     ) {
                         MediaWidget(
-                            state = state.mediaState,
+                            state = MediaTrackState(title = "Windows Audio Session", artist = "Готов к синхронизации"),
                             onPlayPause = { viewModel.mediaPlayPause() },
                             onNext = { viewModel.mediaNext() },
                             onPrevious = { viewModel.mediaPrevious() }
@@ -123,50 +145,65 @@ fun DashboardScreen(
                     }
 
                     WidgetCard(
-                        modifier = Modifier.height(52.dp).fillMaxWidth(),
+                        modifier = Modifier
+                            .height(48.dp)
+                            .fillMaxWidth(),
                         isEditMode = state.isEditMode
                     ) {
                         BatteryWidget(
-                            batteryPercent = state.batteryPercent,
-                            isPowerConnected = state.isPowerConnected
+                            batteryInfo = state.batteryInfo
                         )
                     }
                 }
 
-                // Volume Slider Column
+                // Column 3: Volume Slider (96dp)
                 WidgetCard(
-                    title = "VOLUME",
-                    modifier = Modifier.width(96.dp).fillMaxHeight(),
+                    title = "ГРОМКОСТЬ",
+                    modifier = Modifier
+                        .width(96.dp)
+                        .fillMaxHeight(),
                     isEditMode = state.isEditMode
                 ) {
                     VolumeWidget(
-                        volume = state.volume,
-                        isMuted = state.isMuted,
-                        onVolumeChange = { viewModel.setVolume(it) },
-                        onToggleMute = { viewModel.toggleMute() }
+                        currentMode = state.volumeMode,
+                        androidVolumePercent = state.androidAudio.volumePercent,
+                        isAndroidMuted = state.androidAudio.isMuted,
+                        windowsVolumePercent = state.windowsVolume,
+                        isWindowsMuted = state.isWindowsMuted,
+                        onModeChange = { viewModel.setVolumeMode(it) },
+                        onAndroidVolumeChange = { viewModel.setAndroidVolume(it) },
+                        onToggleAndroidMute = { viewModel.toggleAndroidMute() },
+                        onWindowsVolumeChange = { viewModel.setWindowsVolume(it) },
+                        onToggleWindowsMute = { viewModel.toggleWindowsMute() }
                     )
                 }
 
-                // Brightness Slider Column
+                // Column 4: Brightness Slider (96dp)
                 WidgetCard(
-                    title = "BRIGHTNESS",
-                    modifier = Modifier.width(96.dp).fillMaxHeight(),
+                    title = "ЯРКОСТЬ",
+                    modifier = Modifier
+                        .width(96.dp)
+                        .fillMaxHeight(),
                     isEditMode = state.isEditMode
                 ) {
                     BrightnessWidget(
-                        brightness = state.brightness,
-                        onBrightnessChange = { viewModel.setBrightness(it) }
+                        brightnessInfo = state.androidBrightness,
+                        onBrightnessChange = { viewModel.setAndroidBrightness(it) }
                     )
                 }
 
-                // Right Column: System Shortcuts & User Custom Actions
+                // Column 5: System Shortcuts & User Custom Actions (Width 260dp)
                 Column(
-                    modifier = Modifier.width(260.dp).fillMaxHeight(),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                    modifier = Modifier
+                        .width(260.dp)
+                        .fillMaxHeight(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     WidgetCard(
-                        title = "SYSTEM ACTIONS",
-                        modifier = Modifier.weight(2f).fillMaxWidth(),
+                        title = "СИСТЕМНЫЕ ДЕЙСТВИЯ",
+                        modifier = Modifier
+                            .weight(2f)
+                            .fillMaxWidth(),
                         isEditMode = state.isEditMode
                     ) {
                         QuickActionsWidget(
@@ -175,18 +212,24 @@ fun DashboardScreen(
                         )
                     }
 
-                    // Dynamically added custom widgets from user layout
+                    // Dynamically configurable custom widgets
                     val customWidgets = state.layout.widgets.filter { it.type == WidgetType.CUSTOM_BUTTON }
                     if (customWidgets.isNotEmpty()) {
                         Row(
-                            modifier = Modifier.weight(1f).fillMaxWidth(),
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            customWidgets.take(2).forEach { w ->
+                            customWidgets.take(2).forEachIndexed { idx, w ->
                                 WidgetCard(
-                                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .fillMaxHeight(),
                                     isEditMode = state.isEditMode,
-                                    onDelete = { viewModel.removeWidget(w.id) }
+                                    onDelete = { viewModel.removeWidget(w.id) },
+                                    onMoveLeft = if (idx > 0) { { viewModel.moveWidget(idx, -1) } } else null,
+                                    onMoveRight = if (idx < customWidgets.size - 1) { { viewModel.moveWidget(idx, 1) } } else null
                                 ) {
                                     CustomButtonWidget(
                                         model = w,
@@ -214,12 +257,15 @@ private fun DashboardHeader(
     isEditMode: Boolean,
     connectionState: ConnectionState,
     statusMessage: String?,
+    isErrorMessage: Boolean,
     onToggleEdit: () -> Unit,
     onAddWidget: () -> Unit,
     onResetLayout: () -> Unit
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth().height(36.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(38.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -227,20 +273,20 @@ private fun DashboardHeader(
             Text(
                 text = "TOUCH PANEL",
                 color = TextPrimary,
-                fontSize = 14.sp,
+                fontSize = 13.sp,
                 fontWeight = FontWeight.ExtraBold,
-                letterSpacing = 1.sp
+                letterSpacing = 1.2.sp
             )
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            // Status message or connection state
+            // Toast / Connection Indicator
             if (statusMessage != null) {
                 Text(
                     text = "• $statusMessage",
-                    color = StatusDisconnected,
+                    color = if (isErrorMessage) StatusDisconnected else StatusConnected,
                     fontSize = 11.sp,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.SemiBold
                 )
             } else {
                 val isConnected = connectionState is ConnectionState.Connected
@@ -253,9 +299,10 @@ private fun DashboardHeader(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = if (isConnected) "Windows Connected" else "Windows Offline",
+                        text = if (isConnected) "Windows подключен" else "Windows офлайн",
                         color = TextSecondary,
-                        fontSize = 11.sp
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium
                     )
                 }
             }
@@ -272,7 +319,7 @@ private fun DashboardHeader(
                 ) {
                     Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(14.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Add", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                    Text("Добавить", fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 }
 
                 OutlinedButton(
@@ -283,7 +330,7 @@ private fun DashboardHeader(
                 ) {
                     Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(14.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Reset", fontSize = 11.sp)
+                    Text("Сброс", fontSize = 11.sp)
                 }
             }
 
@@ -293,12 +340,16 @@ private fun DashboardHeader(
                     containerColor = if (isEditMode) AccentPurpleDark else SurfaceCardElevated
                 ),
                 shape = RoundedCornerShape(8.dp),
-                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
                 modifier = Modifier.height(30.dp)
             ) {
-                Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(14.dp))
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(if (isEditMode) "Done" else "Edit", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(13.dp))
+                Spacer(modifier = Modifier.width(5.dp))
+                Text(
+                    text = if (isEditMode) "Готово" else "Раскладка",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
     }
