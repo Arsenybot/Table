@@ -1,0 +1,14 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+
+# Large uploaded dumps & mobile binaries (exceeds GitHub REST API 25MB blob limit)
+*.apk
+*.xapk
+*.zip
+public/assets/aistudio/*.txt

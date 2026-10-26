@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">Touch Panel</string>
+    <string name="dashboard_title">Touch Control Surface</string>
+    <string name="edit_layout">Edit Layout</string>
+    <string name="save_layout">Save Layout</string>
+    <string name="reset_layout">Reset to Default</string>
+    <string name="add_widget">Add Widget</string>
+    <string name="windows_disconnected">Disconnected</string>
+    <string name="windows_connected">Connected to Windows</string>
+    <string name="mango_talker_title">Mango Talker</string>
+</resources>

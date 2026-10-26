@@ -1,0 +1,6 @@
+{
+  "name": "Touch Panel Android",
+  "description": "Customizable touch control panel for Windows running on Android in landscape orientation with widgets, Mango Talker card, and Windows protocol integration.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
