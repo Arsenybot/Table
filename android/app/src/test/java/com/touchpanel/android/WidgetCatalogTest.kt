@@ -30,9 +30,10 @@ class WidgetCatalogTest {
     @Test
     fun testDefaultLayoutContainsTenWidgets() {
         val layout = DefaultLayout.create()
-        assertEquals(10, layout.widgets.size)
-        assertEquals(12, layout.columns)
-        assertEquals(6, layout.rows)
+        assertEquals(12, layout.widgets.size)
+        assertEquals(8, layout.columns)
+        assertEquals(4, layout.rows)
+        assertEquals(2, layout.pageCount)
 
         // Verify key widgets are present
         val hasClock = layout.widgets.any { it.type == WidgetType.CLOCK }

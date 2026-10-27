@@ -11,6 +11,7 @@ data class WidgetModel(
     val gridRow: Int,
     val colSpan: Int,
     val rowSpan: Int,
+    val pageIndex: Int = 0,
     val isEnabled: Boolean = true,
     val isRemovable: Boolean = true,
     val config: Map<String, String> = emptyMap()
@@ -18,8 +19,9 @@ data class WidgetModel(
 
 @Serializable
 data class DashboardLayout(
-    val version: Int = 1,
-    val columns: Int = 12,
-    val rows: Int = 6,
+    val version: Int = 2,
+    val columns: Int = 8,
+    val rows: Int = 4,
+    val pageCount: Int = 2,
     val widgets: List<WidgetModel>
 )

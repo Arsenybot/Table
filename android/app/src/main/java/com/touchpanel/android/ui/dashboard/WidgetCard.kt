@@ -39,22 +39,26 @@ fun WidgetCard(
     title: String? = null,
     isEditMode: Boolean = false,
     isSelected: Boolean = false,
+    isDragging: Boolean = false,
     elevationLevel: CardElevationLevel = CardElevationLevel.DEFAULT,
-    onDelete: (() -> Unit)? = null,
-    onMoveLeft: (() -> Unit)? = null,
-    onMoveRight: (() -> Unit)? = null,
+    onClick: (() -> Unit)? = null,
+    onLongClick: (() -> Unit)? = null,
     content: @Composable BoxScope.() -> Unit
 ) {
     val shape = RoundedCornerShape(16.dp)
 
-    val surfaceColor = when (elevationLevel) {
-        CardElevationLevel.DEFAULT -> SurfaceCard
-        CardElevationLevel.ELEVATED -> SurfaceCardElevated
-        CardElevationLevel.FLOATING -> SurfaceCardFloating
+    val surfaceColor = when {
+        isDragging -> SurfaceCardFloating.copy(alpha = 0.85f)
+        isSelected -> SurfaceCardElevated
+        elevationLevel == CardElevationLevel.FLOATING -> SurfaceCardFloating
+        elevationLevel == CardElevationLevel.ELEVATED -> SurfaceCardElevated
+        else -> SurfaceCard
     }
 
     val shadowElevation: Dp = when {
-        isEditMode -> 8.dp
+        isDragging -> 16.dp
+        isSelected -> 10.dp
+        isEditMode -> 6.dp
         elevationLevel == CardElevationLevel.FLOATING -> 6.dp
         elevationLevel == CardElevationLevel.ELEVATED -> 4.dp
         else -> 2.dp
@@ -63,7 +67,7 @@ fun WidgetCard(
     val animatedBorderColor by animateColorAsState(
         targetValue = when {
             isSelected -> BorderSelected
-            isEditMode -> BorderFocused
+            isEditMode -> BorderFocused.copy(alpha = 0.5f)
             else -> BorderSubtle
         },
         animationSpec = tween(durationMillis = 200),
@@ -76,100 +80,47 @@ fun WidgetCard(
                 elevation = shadowElevation,
                 shape = shape,
                 ambientColor = Color.Black.copy(alpha = 0.6f),
-                spotColor = if (isEditMode) AccentPurple.copy(alpha = 0.35f) else Color.Black.copy(alpha = 0.8f)
+                spotColor = if (isSelected) AccentPurple else Color.Black.copy(alpha = 0.8f)
             )
             .clip(shape)
             .background(surfaceColor)
             .border(
                 BorderStroke(
-                    width = if (isEditMode || isSelected) 1.5.dp else 1.dp,
+                    width = if (isSelected) 2.dp else if (isEditMode) 1.dp else 1.dp,
                     color = animatedBorderColor
                 ),
                 shape
             )
-            .padding(12.dp)
+            .clickable(enabled = isEditMode && onClick != null) {
+                onClick?.invoke()
+            }
+            .padding(10.dp)
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            if (title != null || isEditMode) {
+            if (title != null) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 6.dp),
+                        .padding(bottom = 4.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    if (title != null) {
-                        Text(
-                            text = title.uppercase(),
-                            color = if (isEditMode) AccentPurple else TextSecondary,
-                            fontSize = 10.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 0.8.sp,
-                            maxLines = 1
+                    Text(
+                        text = title.uppercase(),
+                        color = if (isSelected) AccentPurple else TextSecondary,
+                        fontSize = 9.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.7.sp,
+                        maxLines = 1
+                    )
+
+                    if (isSelected) {
+                        Box(
+                            modifier = Modifier
+                                .size(6.dp)
+                                .clip(CircleShape)
+                                .background(AccentPurple)
                         )
-                    } else {
-                        Spacer(modifier = Modifier.weight(1f))
-                    }
-
-                    if (isEditMode) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            if (onMoveLeft != null) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(22.dp)
-                                        .clip(CircleShape)
-                                        .background(SurfaceCardActive)
-                                        .clickable { onMoveLeft() },
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.KeyboardArrowLeft,
-                                        contentDescription = "Move Left",
-                                        tint = TextSecondary,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                }
-                            }
-
-                            if (onMoveRight != null) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(22.dp)
-                                        .clip(CircleShape)
-                                        .background(SurfaceCardActive)
-                                        .clickable { onMoveRight() },
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.KeyboardArrowRight,
-                                        contentDescription = "Move Right",
-                                        tint = TextSecondary,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                }
-                            }
-
-                            if (onDelete != null) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(22.dp)
-                                        .clip(CircleShape)
-                                        .background(StatusDisconnected.copy(alpha = 0.2f))
-                                        .clickable { onDelete() },
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Close,
-                                        contentDescription = "Delete widget",
-                                        tint = StatusDisconnected,
-                                        modifier = Modifier.size(14.dp)
-                                    )
-                                }
-                            }
-                        }
                     }
                 }
             }

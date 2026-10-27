@@ -7,6 +7,7 @@ import com.touchpanel.android.domain.widgets.WidgetType
 object DefaultLayout {
     fun create(): DashboardLayout {
         val widgets = listOf(
+            // === PAGE 0: HARDWARE & COMMUNICATIONS ===
             // 1. Clock & Date
             WidgetModel(
                 id = "w_clock",
@@ -14,8 +15,9 @@ object DefaultLayout {
                 title = "Clock & Date",
                 gridCol = 0,
                 gridRow = 0,
-                colSpan = 3,
+                colSpan = 2,
                 rowSpan = 2,
+                pageIndex = 0,
                 isRemovable = false
             ),
             // 2. Calendar
@@ -25,19 +27,21 @@ object DefaultLayout {
                 title = "Calendar",
                 gridCol = 0,
                 gridRow = 2,
-                colSpan = 3,
-                rowSpan = 3,
+                colSpan = 2,
+                rowSpan = 2,
+                pageIndex = 0,
                 isRemovable = true
             ),
-            // 3. Mango Talker Call Card
+            // 3. Mango Talker VoIP Card
             WidgetModel(
                 id = "w_mango_talker",
                 type = WidgetType.MANGO_TALKER,
                 title = "Mango Talker",
-                gridCol = 3,
+                gridCol = 2,
                 gridRow = 0,
-                colSpan = 4,
-                rowSpan = 3,
+                colSpan = 3,
+                rowSpan = 2,
+                pageIndex = 0,
                 isRemovable = true
             ),
             // 4. Media Player Controls
@@ -45,10 +49,11 @@ object DefaultLayout {
                 id = "w_media",
                 type = WidgetType.MEDIA_CONTROLS,
                 title = "Now Playing",
-                gridCol = 3,
-                gridRow = 3,
-                colSpan = 4,
+                gridCol = 2,
+                gridRow = 2,
+                colSpan = 3,
                 rowSpan = 2,
+                pageIndex = 0,
                 isRemovable = true
             ),
             // 5. Vertical Volume Slider
@@ -56,10 +61,11 @@ object DefaultLayout {
                 id = "w_volume",
                 type = WidgetType.VOLUME,
                 title = "Volume",
-                gridCol = 7,
+                gridCol = 5,
                 gridRow = 0,
-                colSpan = 2,
+                colSpan = 1,
                 rowSpan = 4,
+                pageIndex = 0,
                 isRemovable = false
             ),
             // 6. Vertical Brightness Slider
@@ -67,21 +73,23 @@ object DefaultLayout {
                 id = "w_brightness",
                 type = WidgetType.BRIGHTNESS,
                 title = "Brightness",
-                gridCol = 9,
+                gridCol = 6,
                 gridRow = 0,
-                colSpan = 2,
+                colSpan = 1,
                 rowSpan = 4,
+                pageIndex = 0,
                 isRemovable = true
             ),
-            // 7. System Quick Actions
+            // 7. Battery Status
             WidgetModel(
-                id = "w_quick_actions",
-                type = WidgetType.QUICK_ACTIONS,
-                title = "System Shortcuts",
+                id = "w_battery",
+                type = WidgetType.BATTERY_STATUS,
+                title = "Battery",
                 gridCol = 7,
-                gridRow = 4,
-                colSpan = 4,
+                gridRow = 0,
+                colSpan = 1,
                 rowSpan = 2,
+                pageIndex = 0,
                 isRemovable = true
             ),
             // 8. Connection Status & Toggles
@@ -89,41 +97,73 @@ object DefaultLayout {
                 id = "w_connection",
                 type = WidgetType.CONNECTION_STATUS,
                 title = "Connection",
-                gridCol = 0,
-                gridRow = 5,
-                colSpan = 3,
-                rowSpan = 1,
-                isRemovable = false
-            ),
-            // 9. Battery Status
-            WidgetModel(
-                id = "w_battery",
-                type = WidgetType.BATTERY_STATUS,
-                title = "Battery & Power",
-                gridCol = 3,
-                gridRow = 5,
-                colSpan = 4,
-                rowSpan = 1,
-                isRemovable = true
-            ),
-            // 10. Custom Macro Button
-            WidgetModel(
-                id = "w_custom_btn",
-                type = WidgetType.CUSTOM_BUTTON,
-                title = "Terminal",
-                gridCol = 11,
-                gridRow = 0,
+                gridCol = 7,
+                gridRow = 2,
                 colSpan = 1,
                 rowSpan = 2,
+                pageIndex = 0,
+                isRemovable = false
+            ),
+
+            // === PAGE 1: SHORTCUTS & USER MACROS ===
+            // 9. System Quick Actions
+            WidgetModel(
+                id = "w_quick_actions",
+                type = WidgetType.QUICK_ACTIONS,
+                title = "System Shortcuts",
+                gridCol = 0,
+                gridRow = 0,
+                colSpan = 4,
+                rowSpan = 4,
+                pageIndex = 1,
+                isRemovable = true
+            ),
+            // 10. Custom Macro: Terminal
+            WidgetModel(
+                id = "w_custom_btn_1",
+                type = WidgetType.CUSTOM_BUTTON,
+                title = "Terminal",
+                gridCol = 4,
+                gridRow = 0,
+                colSpan = 2,
+                rowSpan = 2,
+                pageIndex = 1,
                 isRemovable = true,
-                config = mapOf("actionId" to "launch_terminal", "label" to "Terminal")
+                config = mapOf("actionId" to "wt", "label" to "Terminal")
+            ),
+            // 11. Custom Macro: Calculator
+            WidgetModel(
+                id = "w_custom_btn_2",
+                type = WidgetType.CUSTOM_BUTTON,
+                title = "Calculator",
+                gridCol = 4,
+                gridRow = 2,
+                colSpan = 2,
+                rowSpan = 2,
+                pageIndex = 1,
+                isRemovable = true,
+                config = mapOf("actionId" to "calc", "label" to "Calculator")
+            ),
+            // 12. Custom Macro: Browser
+            WidgetModel(
+                id = "w_custom_btn_3",
+                type = WidgetType.CUSTOM_BUTTON,
+                title = "Browser",
+                gridCol = 6,
+                gridRow = 0,
+                colSpan = 2,
+                rowSpan = 2,
+                pageIndex = 1,
+                isRemovable = true,
+                config = mapOf("actionId" to "browser", "label" to "Browser")
             )
         )
 
         return DashboardLayout(
-            version = 1,
-            columns = 12,
-            rows = 6,
+            version = 2,
+            columns = 8,
+            rows = 4,
+            pageCount = 2,
             widgets = widgets
         )
     }

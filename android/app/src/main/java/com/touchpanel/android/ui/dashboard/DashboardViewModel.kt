@@ -26,6 +26,11 @@ enum class VolumeControlMode {
 data class DashboardUiState(
     val layout: DashboardLayout = DefaultLayout.create(),
     val isEditMode: Boolean = false,
+    val selectedWidgetId: String? = null,
+    val activePage: Int = 0,
+    val draggedWidgetId: String? = null,
+    val dragGhostCol: Int? = null,
+    val dragGhostRow: Int? = null,
     val volumeMode: VolumeControlMode = VolumeControlMode.ANDROID_DEVICE,
     val androidAudio: AndroidAudioState = AndroidAudioState(),
     val windowsVolume: Int = 50,
@@ -231,22 +236,71 @@ class DashboardViewModel(
         mangoAdapter.openStorePage()
     }
 
+    fun selectWidget(widgetId: String?) {
+        _uiState.update { it.copy(selectedWidgetId = widgetId) }
+    }
+
+    fun setActivePage(page: Int) {
+        val clamped = page.coerceIn(0, (_uiState.value.layout.pageCount - 1).coerceAtLeast(0))
+        _uiState.update { it.copy(activePage = clamped, selectedWidgetId = null) }
+    }
+
+    fun setDragGhost(widgetId: String?, col: Int?, row: Int?) {
+        _uiState.update {
+            it.copy(
+                draggedWidgetId = widgetId,
+                dragGhostCol = col,
+                dragGhostRow = row
+            )
+        }
+    }
+
     // Layout Management
     fun addWidget(type: WidgetType) {
         viewModelScope.launch {
             val desc = WidgetCatalog.getDescriptor(type)
+            val currentLayout = _uiState.value.layout
+            val targetPage = _uiState.value.activePage
+
+            // Find free slot on current page first, or next page
+            val freeSlot = GridCollisionResolver.findNearestFreeSlot(
+                colSpan = desc.defaultColSpan,
+                rowSpan = desc.defaultRowSpan,
+                preferredCol = 0,
+                preferredRow = 0,
+                pageIndex = targetPage,
+                excludeWidgetId = null,
+                layout = currentLayout
+            ) ?: GridCollisionResolver.findNearestFreeSlot(
+                colSpan = desc.defaultColSpan,
+                rowSpan = desc.defaultRowSpan,
+                preferredCol = 0,
+                preferredRow = 0,
+                pageIndex = (targetPage + 1) % currentLayout.pageCount,
+                excludeWidgetId = null,
+                layout = currentLayout
+            )
+
+            val (col, row, page) = if (freeSlot != null) {
+                Triple(freeSlot.first, freeSlot.second, targetPage)
+            } else {
+                Triple(0, 0, targetPage)
+            }
+
             val newWidget = WidgetModel(
                 id = "w_${type.name.lowercase()}_${System.currentTimeMillis()}",
                 type = type,
                 title = desc.defaultTitle,
-                gridCol = 0,
-                gridRow = 0,
+                gridCol = col,
+                gridRow = row,
                 colSpan = desc.defaultColSpan,
                 rowSpan = desc.defaultRowSpan,
+                pageIndex = page,
                 isRemovable = true
             )
+
             layoutRepository.addWidget(newWidget)
-            _uiState.update { it.copy(isCatalogOpen = false) }
+            _uiState.update { it.copy(isCatalogOpen = false, selectedWidgetId = newWidget.id) }
             showMessage("Виджет '${desc.displayName}' добавлен")
         }
     }
@@ -254,39 +308,91 @@ class DashboardViewModel(
     fun removeWidget(widgetId: String) {
         viewModelScope.launch {
             layoutRepository.removeWidget(widgetId)
+            _uiState.update {
+                if (it.selectedWidgetId == widgetId) it.copy(selectedWidgetId = null) else it
+            }
             showMessage("Виджет удален с панели")
         }
     }
 
-    fun moveWidget(index: Int, direction: Int) {
-        val currentWidgets = _uiState.value.layout.widgets.toMutableList()
-        val targetIndex = index + direction
-        if (targetIndex in 0 until currentWidgets.size) {
-            val moved = currentWidgets.removeAt(index)
-            currentWidgets.add(targetIndex, moved)
-            viewModelScope.launch {
-                layoutRepository.saveLayout(_uiState.value.layout.copy(widgets = currentWidgets))
-            }
+    fun moveWidgetToSlot(widgetId: String, newCol: Int, newRow: Int, pageIndex: Int = _uiState.value.activePage) {
+        val currentLayout = _uiState.value.layout
+        val updated = GridCollisionResolver.moveWidget(
+            widgetId = widgetId,
+            newCol = newCol,
+            newRow = newRow,
+            newPage = pageIndex,
+            layout = currentLayout
+        )
+        viewModelScope.launch {
+            layoutRepository.saveLayout(updated)
+            _uiState.update { it.copy(draggedWidgetId = null, dragGhostCol = null, dragGhostRow = null) }
         }
     }
 
-    fun resizeWidget(widgetId: String, deltaCol: Int) {
-        val current = _uiState.value.layout.widgets
-        val updated = current.map { widget ->
-            if (widget.id == widgetId) {
-                val desc = WidgetCatalog.getDescriptor(widget.type)
-                val newSpan = (widget.colSpan + deltaCol).coerceIn(desc.minColSpan, desc.maxColSpan)
-                widget.copy(colSpan = newSpan)
-            } else widget
+    fun moveWidgetToPage(widgetId: String, targetPage: Int) {
+        val currentLayout = _uiState.value.layout
+        val target = currentLayout.widgets.find { it.id == widgetId } ?: return
+        val clampedPage = targetPage.coerceIn(0, currentLayout.pageCount - 1)
+        if (target.pageIndex == clampedPage) return
+
+        val freeSlot = GridCollisionResolver.findNearestFreeSlot(
+            colSpan = target.colSpan,
+            rowSpan = target.rowSpan,
+            preferredCol = target.gridCol,
+            preferredRow = target.gridRow,
+            pageIndex = clampedPage,
+            excludeWidgetId = widgetId,
+            layout = currentLayout
+        )
+
+        val updated = if (freeSlot != null) {
+            GridCollisionResolver.moveWidget(
+                widgetId = widgetId,
+                newCol = freeSlot.first,
+                newRow = freeSlot.second,
+                newPage = clampedPage,
+                layout = currentLayout
+            )
+        } else {
+            showMessage("Нет места на странице ${clampedPage + 1}", isError = true)
+            return
         }
+
         viewModelScope.launch {
-            layoutRepository.saveLayout(_uiState.value.layout.copy(widgets = updated))
+            layoutRepository.saveLayout(updated)
+            _uiState.update { it.copy(activePage = clampedPage) }
+            showMessage("Виджет перемещен на страницу ${clampedPage + 1}")
+        }
+    }
+
+    fun resizeWidget(widgetId: String, deltaCol: Int, deltaRow: Int = 0) {
+        val currentLayout = _uiState.value.layout
+        val target = currentLayout.widgets.find { it.id == widgetId } ?: return
+
+        val newColSpan = target.colSpan + deltaCol
+        val newRowSpan = target.rowSpan + deltaRow
+
+        val updated = GridCollisionResolver.resizeWidget(
+            widgetId = widgetId,
+            newColSpan = newColSpan,
+            newRowSpan = newRowSpan,
+            layout = currentLayout
+        )
+
+        if (updated != null) {
+            viewModelScope.launch {
+                layoutRepository.saveLayout(updated)
+            }
+        } else {
+            showMessage("Недостаточно места для изменения размера", isError = true)
         }
     }
 
     fun resetLayout() {
         viewModelScope.launch {
             layoutRepository.resetToDefault()
+            _uiState.update { it.copy(selectedWidgetId = null, activePage = 0) }
             showMessage("Раскладка сброшена по умолчанию")
         }
     }

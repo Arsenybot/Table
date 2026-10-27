@@ -14,8 +14,11 @@ export interface WidgetModel {
   id: string;
   type: WidgetType;
   title: string;
-  colSpan: number; // 1-12
-  rowSpan: number; // 1-6
+  gridCol: number;
+  gridRow: number;
+  colSpan: number;
+  rowSpan: number;
+  pageIndex?: number;
   isRemovable: boolean;
   config?: Record<string, string>;
 }
@@ -23,6 +26,8 @@ export interface WidgetModel {
 export interface DashboardLayout {
   version: number;
   columns: number;
+  rows: number;
+  pageCount: number;
   widgets: WidgetModel[];
 }
 

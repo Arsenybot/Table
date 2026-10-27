@@ -1,115 +1,55 @@
 import React from 'react';
-import { Trash2, Settings, ArrowLeft, ArrowRight, Plus, Minus } from 'lucide-react';
 import { WidgetModel } from '../../types';
 
 interface WidgetContainerProps {
   widget: WidgetModel;
   isEditMode: boolean;
-  onDelete?: () => void;
-  onConfigure?: () => void;
-  onMove?: (direction: 'left' | 'right') => void;
-  onResize?: (delta: number) => void;
+  isSelected: boolean;
+  isDragging?: boolean;
+  onClick?: () => void;
   children: React.ReactNode;
 }
 
 export const WidgetContainer: React.FC<WidgetContainerProps> = ({
   widget,
   isEditMode,
-  onDelete,
-  onConfigure,
-  onMove,
-  onResize,
+  isSelected,
+  isDragging = false,
+  onClick,
   children,
 }) => {
   return (
     <div
-      style={{
-        gridColumn: `span ${widget.colSpan}`,
-        gridRow: `span ${widget.rowSpan}`,
-      }}
-      className={`relative flex flex-col rounded-2xl bg-zinc-950/80 backdrop-blur-md p-3.5 transition-all duration-150 border ${
-        isEditMode
-          ? 'border-purple-500/80 ring-1 ring-purple-500/50 shadow-lg shadow-purple-950/30'
-          : 'border-white/10 hover:border-white/15 shadow-sm shadow-black/80'
+      onClick={isEditMode ? onClick : undefined}
+      className={`relative flex flex-col h-full w-full rounded-2xl p-2.5 sm:p-3 transition-all duration-150 select-none overflow-hidden ${
+        isDragging
+          ? 'bg-zinc-900/90 shadow-2xl scale-[1.02] border-purple-500/80 z-30'
+          : isSelected
+          ? 'bg-zinc-900/90 border-2 border-purple-500 ring-2 ring-purple-500/40 shadow-xl shadow-purple-950/40'
+          : isEditMode
+          ? 'bg-zinc-950/80 border border-white/10 hover:border-purple-500/50 cursor-pointer'
+          : 'bg-zinc-950/80 border border-white/10 hover:border-white/15 shadow-sm shadow-black/80'
       }`}
     >
-      {/* Title & Edit Controls Bar */}
-      <div className="flex items-center justify-between pb-1.5 mb-1">
-        <span className="text-[10px] font-bold tracking-wider text-slate-400 uppercase select-none">
+      {/* Title Bar */}
+      <div className="flex items-center justify-between pb-1 mb-1 shrink-0">
+        <span
+          className={`text-[9.5px] font-bold tracking-wider uppercase truncate ${
+            isSelected ? 'text-purple-400' : 'text-slate-400'
+          }`}
+        >
           {widget.title}
         </span>
 
-        {isEditMode && (
-          <div className="flex items-center gap-1 bg-black/60 rounded-lg p-0.5 border border-white/10">
-            {onMove && (
-              <>
-                <button
-                  onClick={() => onMove('left')}
-                  className="p-1 rounded hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
-                  title="Сдвинуть влево"
-                  type="button"
-                >
-                  <ArrowLeft size={11} />
-                </button>
-                <button
-                  onClick={() => onMove('right')}
-                  className="p-1 rounded hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
-                  title="Сдвинуть вправо"
-                  type="button"
-                >
-                  <ArrowRight size={11} />
-                </button>
-              </>
-            )}
-
-            {onResize && (
-              <>
-                <button
-                  onClick={() => onResize(-1)}
-                  className="p-1 rounded hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
-                  title="Уменьшить ширину"
-                  type="button"
-                >
-                  <Minus size={11} />
-                </button>
-                <button
-                  onClick={() => onResize(1)}
-                  className="p-1 rounded hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
-                  title="Увеличить ширину"
-                  type="button"
-                >
-                  <Plus size={11} />
-                </button>
-              </>
-            )}
-
-            {onConfigure && (
-              <button
-                onClick={onConfigure}
-                className="p-1 rounded hover:bg-white/10 text-slate-400 hover:text-purple-400 transition-colors cursor-pointer"
-                title="Настройки виджета"
-                type="button"
-              >
-                <Settings size={11} />
-              </button>
-            )}
-
-            {widget.isRemovable && onDelete && (
-              <button
-                onClick={onDelete}
-                className="p-1 rounded hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 transition-colors cursor-pointer"
-                title="Удалить виджет"
-                type="button"
-              >
-                <Trash2 size={11} />
-              </button>
-            )}
-          </div>
+        {isSelected && (
+          <span className="h-1.5 w-1.5 rounded-full bg-purple-500 animate-pulse shrink-0 ml-1" />
         )}
       </div>
 
       {/* Widget Content */}
-      <div className="flex-1 w-full min-h-0 overflow-hidden">{children}</div>
+      <div className="flex-1 w-full min-h-0 overflow-hidden relative">
+        {children}
+      </div>
     </div>
   );
 };
